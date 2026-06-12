@@ -16,13 +16,13 @@ from leadtech_fx.transforms import transform_oxr_payload_to_rows
 class OpenExchangeRatesToDatabricksOperator(BaseOperator):
     """Fetch OXR historical rates, transform, and write idempotently."""
 
-    template_fields: tuple[str, ...] = ("start_date", "end_date", "target_table")
+    template_fields: tuple[str, ...] = ("rate_start_date", "rate_end_date", "target_table")
 
     def __init__(
         self,
         *,
-        start_date: str,
-        end_date: str,
+        rate_start_date: str,
+        rate_end_date: str,
         app_id: str | None = None,
         databricks_conn_id: str,
         target_table: str,
@@ -31,8 +31,8 @@ class OpenExchangeRatesToDatabricksOperator(BaseOperator):
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
-        self.start_date = start_date
-        self.end_date = end_date
+        self.rate_start_date = rate_start_date
+        self.rate_end_date = rate_end_date
         self.app_id = app_id
         if not databricks_conn_id or not databricks_conn_id.strip():
             raise ValueError("databricks_conn_id must be a non-empty string.")
@@ -44,8 +44,8 @@ class OpenExchangeRatesToDatabricksOperator(BaseOperator):
     def execute(self, context: dict[str, Any]) -> dict[str, Any]:
         """Run the extract-transform-load flow for requested date range."""
         resolved_app_id = self._resolve_app_id()
-        start_date = parse_date(self.start_date)
-        end_date = parse_date(self.end_date)
+        start_date = parse_date(self.rate_start_date)
+        end_date = parse_date(self.rate_end_date)
         requested_dates = iter_inclusive_dates(start_date=start_date, end_date=end_date)
 
         if len(requested_dates) > self.max_requests_per_run:

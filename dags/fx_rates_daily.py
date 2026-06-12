@@ -22,8 +22,8 @@ with DAG(
 ) as dag:
     fx_rates_daily = OpenExchangeRatesToDatabricksOperator(
         task_id="open_exchange_rates_to_databricks_daily",
-        start_date="{{ ds }}",
-        end_date="{{ ds }}",
+        rate_start_date="{{ ds }}",
+        rate_end_date="{{ ds }}",
         databricks_conn_id="databricks_default",
         target_table="analytics.fx_rates_daily",
         max_requests_per_run=30,
@@ -33,8 +33,8 @@ with DAG(
     # Example historical backfill task configuration (disabled by default):
     # fx_rates_backfill = OpenExchangeRatesToDatabricksOperator(
     #     task_id="open_exchange_rates_to_databricks_backfill",
-    #     start_date="2024-01-01",
-    #     end_date="2024-01-31",
+    #     rate_start_date="2024-01-01",
+    #     rate_end_date="2024-01-31",
     #     databricks_conn_id="databricks_default",
     #     target_table="analytics.fx_rates_daily",
     #     max_requests_per_run=31,

@@ -102,6 +102,8 @@ airflow variables set open_exchange_rates_app_id "<your_app_id>"
 The operator does not log `app_id` and does not include it in the returned summary/XCom payload.
 
 Production note: store credentials in Airflow Connection or Variable, not source code.
+Airflow 3.x note: the operator uses `rate_start_date` and `rate_end_date` to avoid
+collisions with reserved `BaseOperator` scheduling fields `start_date`/`end_date`.
 
 ## Running the DAG
 
@@ -110,7 +112,7 @@ Daily DAG:
 - DAG id: `fx_rates_daily`
 - Schedule: `@daily`
 - Catchup enabled (backfill-friendly)
-- Daily task uses `{{ ds }}` for both `start_date` and `end_date`, so each run processes one logical UTC date
+- Daily task uses `{{ ds }}` for both `rate_start_date` and `rate_end_date`, so each run processes one logical UTC date
 
 Example local Airflow commands:
 
