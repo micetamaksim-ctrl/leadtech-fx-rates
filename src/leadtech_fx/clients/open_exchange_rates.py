@@ -109,7 +109,7 @@ class OpenExchangeRatesClient:
                     continue
                 raise RuntimeError(
                     "Open Exchange Rates request error for "
-                    f"{requested_date.isoformat()} after retries: {exc}"
+                    f"{requested_date.isoformat()} after retries: {exc.__class__.__name__}"
                 ) from exc
 
             if response.status_code == 200:

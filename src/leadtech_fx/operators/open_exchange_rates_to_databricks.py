@@ -70,10 +70,14 @@ class OpenExchangeRatesToDatabricksOperator(BaseOperator):
         )
         sink = MockDatabricksSink()
         ingested_at = utc_now().astimezone(UTC)
+        payloads_by_date = client.fetch_historical_range(
+            start_date=start_date,
+            end_date=end_date,
+        )
 
         all_rows = []
         for requested_date in requested_dates:
-            payload = client.fetch_historical(requested_date=requested_date)
+            payload = payloads_by_date[requested_date]
             rows = transform_oxr_payload_to_rows(
                 payload=payload,
                 requested_date=requested_date,

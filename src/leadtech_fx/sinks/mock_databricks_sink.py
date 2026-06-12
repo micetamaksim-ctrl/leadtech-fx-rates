@@ -47,21 +47,13 @@ class MockDatabricksSink(DatabricksSink):
             partition_dir = table_path / f"requested_date={partition_date}"
             partition_dir.mkdir(parents=True, exist_ok=True)
             data_path = partition_dir / "data.jsonl"
-            temp_path: Path | None = None
 
             # Idempotency + safer write: write to temp file then atomically replace.
-            file_descriptor, temp_name = tempfile.mkstemp(
-                dir=partition_dir, prefix="data_", suffix=".tmp"
+            self._write_partition_data_atomically(
+                partition_rows=partition_rows,
+                partition_dir=partition_dir,
+                data_path=data_path,
             )
-            temp_path = Path(temp_name)
-            try:
-                with os.fdopen(file_descriptor, "w", encoding="utf-8") as handle:
-                    for row in partition_rows:
-                        handle.write(self._serialize_row(row) + "\n")
-                temp_path.replace(data_path)
-            finally:
-                if temp_path.exists():
-                    temp_path.unlink()
             total_rows_written += len(partition_rows)
 
         self._write_run_summary(
@@ -85,6 +77,28 @@ class MockDatabricksSink(DatabricksSink):
         payload["rate_date"] = row.rate_date.isoformat()
         payload["ingested_at"] = row.ingested_at.astimezone(UTC).isoformat()
         return json.dumps(payload, sort_keys=True)
+
+    def _write_partition_data_atomically(
+        self,
+        partition_rows: list[FxRateRow],
+        partition_dir: Path,
+        data_path: Path,
+    ) -> None:
+        """Write partition rows via temp file and atomic replace."""
+        file_descriptor, temp_name = tempfile.mkstemp(
+            dir=partition_dir,
+            prefix="data_",
+            suffix=".tmp",
+        )
+        temp_path = Path(temp_name)
+        try:
+            with os.fdopen(file_descriptor, "w", encoding="utf-8") as handle:
+                for row in partition_rows:
+                    handle.write(self._serialize_row(row) + "\n")
+            temp_path.replace(data_path)
+        finally:
+            if temp_path.exists():
+                temp_path.unlink()
 
     @staticmethod
     def _write_run_summary(

@@ -91,3 +91,109 @@ def test_client_enforces_max_requests_per_run_limit() -> None:
         )
 
     assert session.calls == 0
+
+
+def test_client_retries_http_429_then_succeeds() -> None:
+    """HTTP 429 responses are retried and can recover on next attempt."""
+    payload = {
+        "base": "USD",
+        "timestamp": 1704067200,
+        "rates": {"EUR": 0.91},
+    }
+    session = _FakeSession(
+        outcomes=[
+            _FakeResponse(status_code=429, text="rate limit"),
+            _FakeResponse(status_code=200, payload=payload),
+        ]
+    )
+    client = OpenExchangeRatesClient(
+        app_id="test-app-id",
+        session=session,  # type: ignore[arg-type]
+        max_retries=2,
+        backoff_seconds=0,
+        throttle_seconds=0,
+    )
+
+    result = client.fetch_historical(requested_date=date(2024, 1, 1))
+
+    assert result == payload
+    assert session.calls == 2
+
+
+def test_client_retries_http_500_then_succeeds() -> None:
+    """HTTP 5xx responses are retried and can recover on next attempt."""
+    payload = {
+        "base": "USD",
+        "timestamp": 1704067200,
+        "rates": {"EUR": 0.91},
+    }
+    session = _FakeSession(
+        outcomes=[
+            _FakeResponse(status_code=500, text="server error"),
+            _FakeResponse(status_code=200, payload=payload),
+        ]
+    )
+    client = OpenExchangeRatesClient(
+        app_id="test-app-id",
+        session=session,  # type: ignore[arg-type]
+        max_retries=2,
+        backoff_seconds=0,
+        throttle_seconds=0,
+    )
+
+    result = client.fetch_historical(requested_date=date(2024, 1, 1))
+
+    assert result == payload
+    assert session.calls == 2
+
+
+@pytest.mark.parametrize("status_code", [401, 403])
+def test_client_does_not_retry_normal_4xx(status_code: int) -> None:
+    """Normal 4xx responses (non-429) fail fast without retries."""
+    session = _FakeSession(
+        outcomes=[
+            _FakeResponse(status_code=status_code, text="auth/forbidden"),
+            _FakeResponse(
+                status_code=200,
+                payload={"base": "USD", "timestamp": 1704067200, "rates": {"EUR": 0.91}},
+            ),
+        ]
+    )
+    client = OpenExchangeRatesClient(
+        app_id="test-app-id",
+        session=session,  # type: ignore[arg-type]
+        max_retries=2,
+        backoff_seconds=0,
+        throttle_seconds=0,
+    )
+
+    with pytest.raises(ValueError, match=f"status={status_code}"):
+        client.fetch_historical(requested_date=date(2024, 1, 1))
+
+    assert session.calls == 1
+
+
+def test_client_raises_clear_error_when_retries_exhausted() -> None:
+    """Exhausted request-exception retries raise a clear sanitized error."""
+    session = _FakeSession(
+        outcomes=[
+            requests.Timeout("first timeout"),
+            requests.Timeout("second timeout"),
+            requests.Timeout("third timeout"),
+        ]
+    )
+    client = OpenExchangeRatesClient(
+        app_id="test-app-id",
+        session=session,  # type: ignore[arg-type]
+        max_retries=2,
+        backoff_seconds=0,
+        throttle_seconds=0,
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="Open Exchange Rates request error for 2024-01-01 after retries: Timeout",
+    ):
+        client.fetch_historical(requested_date=date(2024, 1, 1))
+
+    assert session.calls == 3

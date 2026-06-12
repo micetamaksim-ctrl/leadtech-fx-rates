@@ -18,7 +18,7 @@ The goal is clarity and engineering judgment rather than heavy infrastructure.
 Pipeline flow:
 
 1. **Operator** parses and validates date inputs (UTC assumptions).
-2. **Client** fetches one OXR historical payload per requested date with retries/backoff.
+2. **Client** fetches inclusive date ranges day-by-day with retry/backoff and light throttling.
 3. **Transform** flattens `rates` into analytics-friendly `FxRateRow` records.
 4. **Sink** writes records into partitioned local files under `outputs/mock_delta/`.
 
@@ -88,8 +88,10 @@ For tests/imports, the repository uses `tests/conftest.py` to add `src/` to `PYT
 
 Configure OXR credentials at runtime:
 
-1. Preferred for this project: Airflow Variable `open_exchange_rates_app_id`
-2. Operator also supports explicit `app_id` parameter (useful for local/testing only)
+1. Production usage should resolve `app_id` from an Airflow Variable or Connection.
+2. The current DAG does not pass `app_id` explicitly.
+3. The operator still supports an explicit `app_id` parameter, mainly for local/testing usage.
+4. `app_id` should not be hardcoded in source code.
 
 Example:
 
@@ -97,7 +99,7 @@ Example:
 airflow variables set open_exchange_rates_app_id "<your_app_id>"
 ```
 
-`app_id` is never logged.
+The operator does not log `app_id` and does not include it in the returned summary/XCom payload.
 
 Production note: store credentials in Airflow Connection or Variable, not source code.
 
@@ -166,6 +168,7 @@ Current test files:
 - `base_currency`, `quote_currency`, `rate`
 - `source`
 - `ingested_at` (UTC)
+- For this local implementation, `rate` uses Python `float` for simplicity.
 
 ## Assumptions and Limitations
 
@@ -176,6 +179,8 @@ Current test files:
 - `max_requests_per_run` protects against accidental large backfills in one run.
 - Current sink is filesystem-based, not a real Databricks target.
 - Current implementation writes full partition files for requested dates (simple and clear for assessment scope).
+- For a real Databricks/Delta implementation, `rate` would likely be stored as `DECIMAL(18,8)` for stronger financial precision.
+- Using `float` here is acceptable because the assessment allows DOUBLE or DECIMAL and the mock sink focuses on pipeline behavior.
 
 ### Backfill behavior
 
