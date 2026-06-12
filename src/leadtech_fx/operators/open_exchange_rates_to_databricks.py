@@ -110,7 +110,7 @@ class OpenExchangeRatesToDatabricksOperator(BaseOperator):
         if self.app_id:
             return self.app_id
 
-        app_id = Variable.get("open_exchange_rates_app_id", default_var=None)
+        app_id = Variable.get("open_exchange_rates_app_id", default=None)
         if app_id:
             return app_id
 
