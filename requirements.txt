@@ -1,0 +1,4 @@
+apache-airflow>=3.0.0,<4.0.0
+requests>=2.32.0,<3.0.0
+python-dateutil>=2.9.0,<3.0.0
+pytest>=8.0.0,<9.0.0
