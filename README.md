@@ -189,6 +189,12 @@ Current test files:
 - Because the operator accepts date ranges and the DAG has catchup enabled, historical backfills are straightforward.
 - Re-running backfill dates is safe due to partition overwrite idempotency.
 
+## Production follow-up notes
+
+- `docs/databricks_delta_write_path.md`: production-oriented Delta write path evolution from the current mock sink.
+- `docs/databricks_merge.sql`: concrete Delta `MERGE` SQL sketch with project model columns.
+- `docs/airflow_backfill_strategy.md`: dynamic task mapping approach for larger historical backfills.
+
 ## Next Improvements
 
 - Replace mock sink with real Databricks Delta writer (`MERGE`/overwrite semantics).
