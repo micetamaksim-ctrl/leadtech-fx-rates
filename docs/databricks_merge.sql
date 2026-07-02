@@ -2,8 +2,8 @@
 -- Catalog/schema/table names are environment-specific and should be configured
 -- per workspace and deployment environment.
 
-MERGE INTO analytics.fx_rates AS target
-USING analytics_staging.fx_rates_staging AS staging
+MERGE INTO analytics.fx_rates_daily AS target
+USING analytics.fx_rates_daily_staging AS staging
 ON  target.rate_date = staging.rate_date
 AND target.base_currency = staging.base_currency
 AND target.quote_currency = staging.quote_currency

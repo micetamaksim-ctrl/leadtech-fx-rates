@@ -21,19 +21,27 @@ and is not the current executed DAG implementation:
 
 ```python
 # Pseudo-code only (production follow-up idea)
-daily_or_backfill_dates = build_date_list(...)
+daily_or_backfill_dates = [
+    "2024-01-01",
+    "2024-01-02",
+    "2024-01-03",
+]
 
 OpenExchangeRatesToDatabricksOperator.partial(
-    task_id="open_exchange_rates_to_databricks_mapped",
+    task_id="open_exchange_rates_to_databricks_backfill",
     databricks_conn_id="databricks_default",
     target_table="analytics.fx_rates_daily",
     max_requests_per_run=1,
     throttle_seconds=0.2,
-).expand(
-    rate_start_date=daily_or_backfill_dates,
-    rate_end_date=daily_or_backfill_dates,
+).expand_kwargs(
+    [
+        {"rate_start_date": date, "rate_end_date": date}
+        for date in daily_or_backfill_dates
+    ]
 )
 ```
 
 This keeps each mapped task focused on a single logical date while preserving
 the same operator semantics and idempotent sink behavior.
+Using `expand_kwargs` here avoids cross-product mapping and creates one mapped
+task instance per date.

@@ -8,6 +8,9 @@ In a production deployment, `MockDatabricksSink` would be replaced by a real
 Databricks/Delta write path while preserving the same logical contract: idempotent
 upserts for FX rates and safe reprocessing.
 
+Illustrative target naming in these follow-up docs uses
+`analytics.fx_rates_daily`; exact catalog/schema/table names are environment-specific.
+
 ## Recommended Production Pattern
 
 1. **Write transformed rows to a staging Delta table**
