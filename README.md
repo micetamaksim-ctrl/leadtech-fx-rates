@@ -194,6 +194,8 @@ Current test files:
 - `docs/databricks_delta_write_path.md`: production-oriented Delta write path evolution from the current mock sink.
 - `docs/databricks_merge.sql`: concrete Delta `MERGE` SQL sketch with project model columns.
 - `docs/airflow_backfill_strategy.md`: dynamic task mapping approach for larger historical backfills.
+- `docs/databricks_manual_validation.md`: manual validation runbook using pipeline-generated data in Databricks Free Edition.
+- `docs/databricks_manual_validation.sql`: SQL used in the manual Delta `MERGE` validation flow.
 
 ## Next Improvements
 
